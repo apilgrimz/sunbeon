@@ -58,8 +58,9 @@
   color-scheme:dark;
 }
 *{box-sizing:border-box}
+[hidden]{display:none!important}
 html{-webkit-text-size-adjust:100%}
-body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:16px;line-height:1.55}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:16px;line-height:1.55;word-break:keep-all;overflow-wrap:break-word}
 button,input,select,textarea,output{font:inherit;color:inherit}
 button{cursor:pointer}
 button:disabled{cursor:default}
@@ -124,6 +125,14 @@ button:disabled{cursor:default}
 .seg.dark button[aria-pressed="true"]{background:var(--led-text);color:var(--led-bg);box-shadow:none}
 .mnote{margin:0;font-size:15px;line-height:1.55;color:var(--led-text)}
 .mnote b{color:var(--led);font-weight:700}
+.seg.dark.grow{flex:1 1 200px;margin-left:0;min-width:0}
+.seg.dark.grow button{padding:0 2px;font-size:14px;white-space:nowrap}
+.rule-box{display:grid;gap:6px;border:1px dashed var(--led-line);border-radius:12px;padding:10px}
+.rgrp{display:inline-flex;align-items:center;gap:6px}
+.ninput.sm{width:60px;font-size:22px}
+.dsel{height:40px;border-radius:10px;border:1px solid var(--led-line);background-color:var(--led-panel);color:var(--led-text);font-weight:600;font-size:15px;padding:0 28px 0 10px;appearance:none;-webkit-appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1.5l5 5 5-5' fill='none' stroke='%239AA8B2' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 10px center}
+.dsel option{color:#16212A;background:#FFFFFF}
+.rhint{margin:0;font-size:13px;color:var(--led-sub)}
 .board-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
 .cell{background-color:var(--led-panel);background-image:radial-gradient(var(--led-dot) 1px,transparent 1.4px);background-size:5px 5px;border:1px solid var(--led-line);border-radius:12px;padding:10px 10px 11px;display:grid;gap:5px;min-width:0;align-content:start}
 .cell-k{font-size:13px;color:var(--led-sub);font-weight:600}
@@ -142,6 +151,12 @@ button:disabled{cursor:default}
 .card-top{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
 .card-title{margin:0;font-family:var(--f-display);font-weight:400;font-size:21px;line-height:1.2}
 .card-sub{margin:-6px 0 0;color:var(--muted);font-size:14px}
+.days-row{display:flex;flex-wrap:wrap;align-items:center;gap:8px 12px}
+.dfield{display:inline-flex;align-items:center;gap:8px}
+.ctl.dnum{width:96px;font-family:var(--f-num);font-weight:600;font-size:20px;text-align:center;padding:0 8px;-moz-appearance:textfield}
+.dnum::-webkit-outer-spin-button,.dnum::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
+.dunit{font-weight:600}
+#seg-days{flex:1 1 210px}
 .card-h{margin:0;font-size:16px;font-weight:700}
 .card-h span{color:var(--muted);font-weight:500}
 .ranges{display:grid;gap:14px}
@@ -374,6 +389,29 @@ table.cyc tr.blk td b{color:var(--ink)}
           <button class="nbtn" type="button" id="sc-plus" aria-label="현재 하루 이동 칸 수 늘리기">+</button>
           <span class="mlab">칸</span>
         </div>
+        <div class="mctl">
+          <span class="mlab">보정</span>
+          <div class="seg dark grow" id="seg-rule" role="group" aria-label="현재 방식 보정">
+            <button type="button" data-v="none">없음</button>
+            <button type="button" data-v="every">며칠마다</button>
+            <button type="button" data-v="week">매주</button>
+            <button type="button" data-v="month">매월</button>
+          </div>
+        </div>
+        <div class="rule-box" id="rule-row" hidden>
+          <div class="mctl">
+            <span class="rgrp" id="rg-every"><input class="ninput sm" id="in-rn" type="number" inputmode="numeric" min="2" max="400" aria-label="보정 간격(일)"><span class="mlab">일마다</span></span>
+            <span class="rgrp" id="rg-week"><select class="dsel" id="in-rwd" aria-label="보정 요일"></select><span class="mlab">에는</span></span>
+            <span class="rgrp" id="rg-month"><span class="mlab">매월</span><select class="dsel" id="in-rmd" aria-label="보정 날짜"></select><span class="mlab">에는</span></span>
+            <span class="rgrp">
+              <button class="nbtn" type="button" id="rm-minus" aria-label="보정일 이동 칸 수 줄이기">−</button>
+              <output class="nout" id="rm-val" aria-live="polite">4</output>
+              <button class="nbtn" type="button" id="rm-plus" aria-label="보정일 이동 칸 수 늘리기">+</button>
+              <span class="mlab">칸</span>
+            </span>
+          </div>
+          <p class="rhint" id="rule-diff"></p>
+        </div>
         <p class="mnote" id="cur-note"></p>
       </div>
 
@@ -394,11 +432,13 @@ table.cyc tr.blk td b{color:var(--ink)}
     </section>
 
     <section class="card" aria-labelledby="res-title">
-      <div class="card-top">
-        <h2 class="card-title" id="res-title">2년 돌려 보면</h2>
-        <div class="seg sm" id="seg-years" role="group" aria-label="비교 기간">
-          <button type="button" data-v="1">1년</button>
-          <button type="button" data-v="2">2년</button>
+      <h2 class="card-title" id="res-title">192일 돌려 보면</h2>
+      <div class="days-row">
+        <label class="dfield"><span class="field-l">기간</span><input class="ctl dnum" id="in-days" type="number" inputmode="numeric" min="7" max="3650" aria-label="돌려 볼 날 수"><span class="dunit">일</span></label>
+        <div class="seg sm" id="seg-days" role="group" aria-label="기간 빠르게 고르기">
+          <button type="button" data-v="fair">공평 주기</button>
+          <button type="button" data-v="365">1년</button>
+          <button type="button" data-v="730">2년</button>
         </div>
       </div>
       <p class="card-sub" id="res-sub"></p>
@@ -465,7 +505,7 @@ table.cyc tr.blk td b{color:var(--ink)}
         </div>
         <p class="hl-sum" id="hl-sum" aria-live="polite"></p>
         <div class="cyc-wrap" id="cyc-wrap"></div>
-        <div class="cal-legend"><span><i class="sw A"></i>오전</span><span><i class="sw P"></i>오후</span><span><i class="sw O"></i>휴무</span><span><i class="sw H"></i>강조한 순번</span><span id="leg-bd"><i class="sw BD"></i>보정일(그날만 더 이동)</span></div>
+        <div class="cal-legend"><span><i class="sw A"></i>오전</span><span><i class="sw P"></i>오후</span><span><i class="sw O"></i>휴무</span><span><i class="sw H"></i>강조한 순번</span><span id="leg-bd"><i class="sw BD"></i><span id="leg-bd-t">보정일</span></span></div>
         <p class="note">표의 숫자를 누르면 그 순번을 강조합니다. 휴무일 숫자는 그날 순번 자리만 보여 주며, 휴무일에도 순번은 계속 이동합니다.</p>
       </div>
       <section class="sec">
@@ -516,7 +556,7 @@ table.cyc tr.blk td b{color:var(--ink)}
       </div>
       <div class="wk" aria-hidden="true"><span>일</span><span>월</span><span>화</span><span>수</span><span>목</span><span>금</span><span>토</span></div>
       <div class="calgrid" id="cal-grid"></div>
-      <div class="cal-legend"><span><i class="sw A"></i>오전</span><span><i class="sw P"></i>오후</span><span><i class="sw O"></i>휴무</span><span id="leg-b"><i class="sw B"></i>보정일</span></div>
+      <div class="cal-legend"><span><i class="sw A"></i>오전</span><span><i class="sw P"></i>오후</span><span><i class="sw O"></i>휴무</span><span id="leg-b"><i class="sw B"></i><span id="leg-b-t">보정일</span></span></div>
       <p class="mine" id="cal-mine"></p>
     </section>
   </section>
@@ -839,11 +879,161 @@ var RE = (function () {
     return out;
   }
 
+  /* ---------- 날마다 이동 칸 수가 다를 수 있는 방식 (현재 방식의 보정 규칙 · 개선 방식의 보정일) ----------
+     start = {y, m(1~12), d}. 규칙(rule):
+       {kind:'every', n, move}  시작일부터 n일마다 그날만 move칸
+       {kind:'week',  wd, move} 매주 wd요일(0=일 … 6=토)에는 move칸
+       {kind:'month', md, move} 매월 md일(1~28)에는 move칸
+     d일째의 이동 = d-1일째 → d일째로 넘어갈 때 움직이는 칸 수. 0일째(시작일)는 이동 없음. */
+  function dayInfo(start, d) { var t = new Date(Date.UTC(start.y, start.m - 1, start.d + d)); return { dow: t.getUTCDay(), dom: t.getUTCDate() }; }
+  function validRule(rule) { return !!rule && (rule.kind === 'every' || rule.kind === 'week' || rule.kind === 'month') ? rule : null; }
+  function isRuleDay(rule, start, d) {
+    if (!rule || d <= 0) return false;
+    if (rule.kind === 'every') return d % rule.n === 0;
+    var info = dayInfo(start, d);
+    return rule.kind === 'week' ? info.dow === rule.wd : info.dom === rule.md;
+  }
+  /* 일정한 간격으로 돌아오는 규칙(n일마다 · 매주)은 {n: 간격, a: 첫 규칙일}로 바꿔 둔다. 매월은 간격이 달라 null */
+  function ruleCycle(rule, start) {
+    rule = validRule(rule);
+    if (!rule) return null;
+    if (rule.kind === 'every') return { n: rule.n, a: rule.n };
+    if (rule.kind === 'week') return { n: 7, a: mod(rule.wd - dayInfo(start, 0).dow - 1, 7) + 1 };
+    return null;
+  }
+  function makeScheme(an, opt) {
+    var days = Math.max(1, opt.days | 0), adj = !!opt.adj, rule = validRule(opt.rule);
+    var cum = new Int32Array(days), mv = new Int32Array(days), sp = new Uint8Array(days), cnt = 0;
+    for (var d = 1; d < days; d++) {
+      var m = an.s, k = 0;
+      if (adj && d % an.L === 0) { m = an.s + an.e; k = 1; }
+      if (rule && isRuleDay(rule, opt.start, d)) { m = rule.move; k = 2; cnt++; }
+      mv[d] = m; sp[d] = k; cum[d] = cum[d - 1] + m;
+    }
+    return { an: an, adj: adj, rule: rule, days: days, cum: cum, mv: mv, sp: sp, N: an.N, dir: an.dir, P: an.P, T: an.T, ruleDays: cnt };
+  }
+  /* 일정한 간격의 규칙이 공평한지 정확히 따진다.
+     Q0 = lcm(간격 n, 근무 주기 T)일마다 근무 단계와 규칙 단계가 함께 처음으로 돌아오고, 순번 자리만 dQ칸 밀린다.
+     Q0일 묶음을 k개 쌓았을 때 모든 근무 단계에서 오전·오후 순번 횟수가 같아지는 첫 k를 찾는다.
+     k = N / gcd(dQ, N)이면 상태가 완전히 처음으로 돌아오므로, 그때까지 같아지지 않으면 영영 같아지지 않는다(차이가 계속 쌓임). */
+  function periodicFair(an, cyc, move) {
+    var N = an.N, P = an.P, T = an.T, s = an.s, dir = an.dir, n = cyc.n, a = cyc.a;
+    var Q0 = lcm(n, T), ph, d, j;
+    function cum(x) { return s * x + (move - s) * (x < a ? 0 : Math.floor((x - a) / n) + 1); }
+    var dQ = mod(cum(Q0), N), kFull = N / gcd(dQ, N);
+    var am = [], pm = [], accA = [], accP = [];
+    for (ph = 0; ph < T; ph++) { am.push(new Int32Array(N)); pm.push(new Int32Array(N)); accA.push(new Int32Array(N)); accP.push(new Int32Array(N)); }
+    for (d = 0; d < Q0; d++) {
+      j = mod(dir * cum(d), N);
+      for (ph = 0; ph < T; ph++) { var st = P[(ph + d) % T]; if (st === 'A') am[ph][j]++; else if (st === 'P') pm[ph][j]++; }
+    }
+    for (var k = 1; k <= kFull; k++) {
+      var sh = mod(dir * (k - 1) * dQ, N);
+      for (ph = 0; ph < T; ph++) for (j = 0; j < N; j++) { var t = (j + sh) % N; accA[ph][t] += am[ph][j]; accP[ph][t] += pm[ph][j]; }
+      var ok = true;
+      for (ph = 0; ph < T && ok; ph++) ok = isUniform(accA[ph]) && isUniform(accP[ph]);
+      if (ok) return { fair: { days: k * Q0, blocks: k, perAM: accA[0][0], perPM: accP[0][0] }, Q0: Q0, period: kFull * Q0 };
+    }
+    return { fair: null, Q0: Q0, period: kFull * Q0 };
+  }
+  function posS(sc, p, d) { return mod(p - 1 + sc.dir * sc.cum[d], sc.N) + 1; }
+  function dayS(sc, phase, p, d) { return { st: sc.P[mod(phase + d, sc.T)], pos: posS(sc, p, d), sp: sc.sp[d], mv: sc.mv[d] }; }
+
+  /* 횟수 배열의 최소·최대를 하나씩 늘릴 때마다 바로 알 수 있게 (전체 비용이 늘린 횟수에 비례) */
+  function Track(N) { this.c = new Int32Array(N); this.lo = 0; this.nlo = N; this.hi = 0; }
+  function bump(t, k) {
+    var v = t.c[k]++;
+    if (v + 1 > t.hi) t.hi = v + 1;
+    if (v === t.lo && --t.nlo === 0) {
+      var m = v + 1, n = 0, c = t.c;
+      for (var i = 0; i < c.length; i++) if (c[i] === m) n++;
+      t.lo = m; t.nlo = n;
+    }
+  }
+  /* phases[g] = 조 g의 시작일 근무 단계. 기사(시작 순번 1) 기준으로 세고, 다른 기사는 자리만 밀림 */
+  function simulateS(sc, D, phases) {
+    var N = sc.N, P = sc.P, T = sc.T, G = phases.length, g, d, am = [], pm = [];
+    for (g = 0; g < G; g++) { am.push(new Track(N)); pm.push(new Track(N)); }
+    var series = new Int32Array(D);
+    for (d = 0; d < D; d++) {
+      var p0 = mod(sc.dir * sc.cum[d], N), gap = 0;
+      for (g = 0; g < G; g++) {
+        var st = P[mod(phases[g] + d, T)];
+        if (st === 'A') bump(am[g], p0); else if (st === 'P') bump(pm[g], p0);
+        var a = am[g].hi - am[g].lo, b = pm[g].hi - pm[g].lo;
+        if (a > gap) gap = a;
+        if (b > gap) gap = b;
+      }
+      series[d] = gap;
+    }
+    return { am: am.map(function (t) { return t.c; }), pm: pm.map(function (t) { return t.c; }), series: series };
+  }
+  function blockCountsS(sc, phase, p, days) {
+    var N = sc.N, am = [], pm = [], q;
+    for (q = 0; q < N; q++) { am.push(0); pm.push(0); }
+    for (var d = 0; d < days; d++) {
+      var st = sc.P[mod(phase + d, sc.T)];
+      if (st === 'O') continue;
+      q = posS(sc, p, d) - 1;
+      if (st === 'A') am[q]++; else pm[q]++;
+    }
+    return { am: am, pm: pm };
+  }
+  function cycleGridS(sc, phase, p, days) {
+    var T = sc.T, rows = [], nRows = Math.ceil(days / T);
+    for (var r = 0; r < nRows; r++) {
+      var row = [];
+      for (var c = 0; c < T; c++) {
+        var d = r * T + c;
+        row.push(d < days ? { d: d, st: sc.P[mod(phase + d, T)], pos: posS(sc, p, d), sp: sc.sp[d], mv: sc.mv[d] } : null);
+      }
+      rows.push(row);
+    }
+    return rows;
+  }
+  function heatMatrixS(sc, phase, days) {
+    var N = sc.N, base = blockCountsS(sc, phase, 1, days), am = [], pm = [];
+    for (var p = 1; p <= N; p++) {
+      var ra = [], rp = [];
+      for (var q = 0; q < N; q++) { var k = mod(q - (p - 1), N); ra.push(base.am[k]); rp.push(base.pm[k]); }
+      am.push(ra); pm.push(rp);
+    }
+    return { am: am, pm: pm };
+  }
+  /* 처음으로 모든 조(phases)의 오전·오후 순번 횟수가 똑같아지는 날까지의 날 수 (H일 안에 없으면 0) */
+  function firstEqualDay(sc, H, phases) {
+    var N = sc.N, P = sc.P, T = sc.T, G = phases.length, g, d, am = [], pm = [], nonU = 0;
+    H = Math.min(H, sc.days);
+    for (g = 0; g < G; g++) { am.push(new Track(N)); pm.push(new Track(N)); }
+    for (d = 0; d < H; d++) {
+      var j = mod(sc.dir * sc.cum[d], N);
+      for (g = 0; g < G; g++) {
+        var st = P[mod(phases[g] + d, T)], t = st === 'A' ? am[g] : st === 'P' ? pm[g] : null;
+        if (!t) continue;
+        var u0 = t.hi === t.lo;
+        bump(t, j);
+        var u1 = t.hi === t.lo;
+        if (u0 && !u1) nonU++; else if (!u0 && u1) nonU--;
+      }
+      if (nonU === 0 && d > 0) return d + 1;
+    }
+    return 0;
+  }
+  /* 시뮬레이션 결과에서 기사 사이 차이(같은 조, 같은 순번 횟수의 최대 − 최소) */
+  function gapOf(sim) {
+    var gap = 0;
+    for (var g = 0; g < sim.am.length; g++) { var a = rng(sim.am[g]), b = rng(sim.pm[g]); gap = Math.max(gap, a[1] - a[0], b[1] - b[0]); }
+    return gap;
+  }
+
   return {
     gcd: gcd, lcm: lcm, mod: mod, pattern: pattern, phaseInfo: phaseInfo, maxGap: maxGap, candidates: candidates,
     recommend: recommend, cumShift: cumShift, posOf: posOf, rng: rng, analyze: analyze, simulate: simulate,
     summarize: summarize, driverCounts: driverCounts, driverDay: driverDay, blockCounts: blockCounts, boundaries: boundaries,
-    cycleGrid: cycleGrid, heatMatrix: heatMatrix, columnsComplete: columnsComplete, simulateOne: simulateOne, simulatePair: simulatePair
+    cycleGrid: cycleGrid, heatMatrix: heatMatrix, columnsComplete: columnsComplete, simulateOne: simulateOne, simulatePair: simulatePair,
+    dayInfo: dayInfo, validRule: validRule, isRuleDay: isRuleDay, ruleCycle: ruleCycle, makeScheme: makeScheme, periodicFair: periodicFair,
+    posS: posS, dayS: dayS, simulateS: simulateS, blockCountsS: blockCountsS, cycleGridS: cycleGridS, heatMatrixS: heatMatrixS, gapOf: gapOf,
+    firstEqualDay: firstEqualDay
   };
 })();
 
@@ -892,10 +1082,14 @@ var RE = (function () {
   var TABS = ['home', 'cycle', 'cal', 'report', 'set'];
   var DEF = {
     N: 16, sCur: 3, dir: -1, sImp: 'same', extraSign: 1,
-    am: 5, off1: 1, pm: 5, off2: 1, groups: 6, start: isoOf(TODAY), years: 2,
+    rule: { kind: 'none', n: 30, wd: 0, md: 1, move: null },
+    am: 5, off1: 1, pm: 5, off2: 1, groups: 6, start: isoOf(TODAY), days: 'fair',
     phases: null, phasesCustom: false, phT: 0, fa: 1, fp: 0,
     tab: 'home', cg: 0, cp: 0, calScheme: 'imp', calMonth: '', cycScheme: 'imp', hlq: 0, heatKind: 'am'
   };
+  var DMIN = 7, DMAX = 3650, LONG = 3650;
+  var RULE_KINDS = ['none', 'every', 'week', 'month'];
+  var WDN = ['일요일', '월요일', '화요일', '수요일', '목요일', '금요일', '토요일'];
   function loadState() {
     try {
       var v = localStorage.getItem(KEY);
@@ -904,7 +1098,7 @@ var RE = (function () {
       if (!o) return {};
       o = JSON.parse(o);
       var m = {};
-      ['N', 'am', 'off1', 'pm', 'off2', 'groups', 'dir', 'extraSign', 'start', 'years', 'phases', 'phasesCustom', 'phT', 'fa', 'fp', 'cg', 'cp', 'calScheme', 'calMonth', 'cycScheme', 'hlq', 'heatKind']
+      ['N', 'am', 'off1', 'pm', 'off2', 'groups', 'dir', 'extraSign', 'start', 'phases', 'phasesCustom', 'phT', 'fa', 'fp', 'cg', 'cp', 'calScheme', 'calMonth', 'cycScheme', 'hlq', 'heatKind']
         .forEach(function (k) { if (o[k] != null) m[k] = o[k]; });
       var tm = { calc: 'home', compare: 'home', cycle: 'cycle', sched: 'cal', report: 'report' };
       if (tm[o.tab]) m.tab = tm[o.tab];
@@ -928,7 +1122,14 @@ var RE = (function () {
     var T = S.am + S.off1 + S.pm + S.off2;
     S.groups = ci(S.groups, 1, 20, 6);
     if (!parseISO(S.start)) S.start = isoOf(TODAY);
-    S.years = +S.years === 1 ? 1 : 2;
+    if (S.days !== 'fair') { var dv = parseInt(S.days, 10); S.days = isNaN(dv) ? 'fair' : Math.max(DMIN, Math.min(DMAX, dv)); }
+    delete S.years;
+    var rk = S.rule && typeof S.rule === 'object' ? S.rule : {}, mv = parseInt(rk.move, 10);
+    S.rule = {
+      kind: RULE_KINDS.indexOf(rk.kind) >= 0 ? rk.kind : 'none',
+      n: ci(rk.n, 2, 400, 30), wd: ci(rk.wd, 0, 6, 0), md: ci(rk.md, 1, 28, 1),
+      move: isNaN(mv) ? null : Math.max(0, Math.min(S.N - 1, mv))
+    };
     var dflt = defaultPhases(S.groups, T);
     if (!S.phasesCustom || S.phT !== T || !Array.isArray(S.phases)) { S.phases = dflt; S.phasesCustom = false; S.phT = T; }
     else {
@@ -949,25 +1150,76 @@ var RE = (function () {
   function fpVal() { return S.fp || S.N; }
   function cpVal() { return S.cp || S.N; }
 
+  /* ---------- 현재 방식의 보정 규칙 ---------- */
+  /* 보정일 이동 칸 수: 직접 정하기 전에는 평소보다 한 칸 더 */
+  function ruleMove() { return S.rule.move == null ? Math.min(S.sCur + 1, S.N - 1) : S.rule.move; }
+  /* 계산에 쓰는 규칙. 보정일 칸 수가 평소와 같으면 보정이 없는 것과 같으므로 null */
+  function ruleObj() {
+    var r = S.rule, mv = ruleMove();
+    if (r.kind === 'none' || mv === S.sCur) return null;
+    var o = { kind: r.kind, move: mv };
+    if (r.kind === 'every') o.n = r.n; else if (r.kind === 'week') o.wd = r.wd; else o.md = r.md;
+    return o;
+  }
+  /* 이보다 길면 '사실상 맞지 않음'으로 본다: 10년과 개선 방식 공평 주기 가운데 긴 쪽 */
+  function longDays() { return Math.max(LONG, R.F || 0); }
+  function ruleWhen(r) { return r.kind === 'every' ? r.n + '일마다' : r.kind === 'week' ? '매주 ' + WDN[r.wd] : '매월 ' + r.md + '일'; }
+  function ruleText(r) { return ruleWhen(r) + ' ' + (r.move === 0 ? '멈춤' : r.move + '칸'); }
+  /* "30일 간격 보정" · "매주 일요일 보정" · "매월 1일 보정" */
+  function ruleName(r) { return (r.kind === 'every' ? r.n + '일 간격' : ruleWhen(r)) + ' 보정'; }
+  /* 현재 방식 한 줄 설명: 매일 3칸 · 매월 1일 4칸 */
+  function curDesc() { return '매일 ' + R.cur.s + '칸' + (R.rule ? ' · ' + ruleText(R.rule) : ''); }
+
   /* ---------- 계산 ---------- */
   var R = null;
+  function sameCum(a, b) {
+    var n = Math.min(a.days, b.days);
+    for (var i = 0; i < n; i++) if (RE.mod(a.cum[i] - b.cum[i], a.N) !== 0) return false;
+    return true;
+  }
   function compute() {
     var w = { am: S.am, off1: S.off1, pm: S.pm, off2: S.off2 };
     var cur = RE.analyze({ N: S.N, w: w, dir: S.dir, sManual: S.sCur, extraSign: S.extraSign });
     var sImp = S.sImp === 'same' ? S.sCur : S.sImp === 'rec' ? cur.sAuto : S.sImp;
     var imp = sImp === cur.s ? cur : RE.analyze({ N: S.N, w: w, dir: S.dir, sManual: sImp, extraSign: S.extraSign });
-    var D = S.years === 1 ? 365 : 730;
-    var sim = RE.simulatePair(cur, imp, D, S.phases);
+    var start = parseISO(S.start), st0 = { y: start.getFullYear(), m: start.getMonth() + 1, d: start.getDate() };
+    var F = imp.fair ? imp.fair.days : 0;
+    var D = S.days === 'fair' ? (F ? Math.max(DMIN, Math.min(F, DMAX)) : 365) : S.days;
+    var rule = ruleObj();
+    var span = Math.max(D, F, cur.L, imp.L) + 1;
+    var scCur = RE.makeScheme(cur, { rule: rule, start: st0, days: span });
+    var scImp = RE.makeScheme(imp, { adj: imp.needAdjust, start: st0, days: span });
+    var same = !!imp.fair && sameCum(scCur, scImp);
+    var simCur = RE.simulateS(scCur, D, S.phases);
+    var sim = { cur: simCur, imp: same ? simCur : RE.simulateS(scImp, D, S.phases) };
+    var rs = null;
+    if (rule) {
+      var cyc = RE.ruleCycle(rule, st0);
+      if (cyc) { var pf = RE.periodicFair(cur, cyc, rule.move); rs = { periodic: true, fair: pf.fair, period: pf.period, Q0: pf.Q0, n: cyc.n }; }
+      else rs = { periodic: false, eqDay: RE.firstEqualDay(RE.makeScheme(cur, { rule: rule, start: st0, days: 3651 }), 3650, S.phases) };
+    }
     R = {
-      cur: cur, imp: imp, w: w, T: cur.T, D: D, sim: sim, sum: RE.summarize(sim), start: parseISO(S.start),
+      cur: cur, imp: imp, w: w, T: cur.T, D: D, F: F, sim: sim, sum: RE.summarize(sim), start: start, st0: st0,
+      rule: rule, ruleSt: rs, sc: { cur: scCur, imp: same ? scCur : scImp },
       bnd: imp.fair && imp.needAdjust ? RE.boundaries(imp, D) : [], phases: S.phases.slice(), groups: S.groups,
-      same: imp.s === cur.s && !imp.needAdjust,
+      same: same,
       sImpWhy: imp.s === cur.s ? '현재와 같음' : (S.sImp === 'rec' ? '추천값' : '직접 정함')
     };
   }
   function schemeAn(key) { return key === 'imp' ? R.imp : R.cur; }
-  function schemeAdj(key) { return key === 'imp' && R.imp.needAdjust; }
+  function schemeOf(key) { return R.sc[key === 'imp' ? 'imp' : 'cur']; }
+  /* 보정일(그날만 다르게 움직이는 날)이 있는 방식인지, 그날 몇 칸인지 */
+  function hasSpecial(key) { var sc = schemeOf(key); return !!sc.rule || sc.adj; }
+  function specialMove(key) { var sc = schemeOf(key); return sc.rule ? sc.rule.move : sc.an.boundaryShift; }
   function moveWord(b) { return b === 0 ? '이동 없이 멈춤' : b + '칸'; }
+  /* 비교 기간 이름: 공평 주기 / 1년 / 약 6개월 */
+  function periodName(D) {
+    if (R.F && D === R.F) return '공평 주기';
+    if (D % 365 === 0) return (D / 365) + '년';
+    if (D < 45) return '';
+    var mo = Math.round(D / 30.44);
+    return mo < 24 ? '약 ' + mo + '개월' : '약 ' + (Math.round(D / 365.25 * 10) / 10) + '년';
+  }
   function dirWord() { return S.dir === -1 ? '역순' : '정순'; }
   function patWord(w) { return '오전 ' + w.am + '일 · 휴무 ' + w.off1 + '일 · 오후 ' + w.pm + '일 · 휴무 ' + w.off2 + '일'; }
   function patShort(w) { return '오전 ' + w.am + '·휴무 ' + w.off1 + '·오후 ' + w.pm + '·휴무 ' + w.off2; }
@@ -981,7 +1233,19 @@ var RE = (function () {
 
   /* 현재 방식이 어떤 상태인지 */
   function curState() {
-    var c = R.cur;
+    var c = R.cur, rs = R.ruleSt;
+    if (R.rule) {
+      var rt = ruleText(R.rule);
+      if (rs.periodic && rs.fair && rs.fair.days > longDays()) return { cls: 'bad', pill: '불공평', note: [[rt + ' 보정으로는 '], ['10년', 1], [' 안에 순번 횟수가 똑같아지지 않습니다.']], brief: '10년 안에 순번 횟수가 똑같아지지 않습니다.' };
+      if (rs.periodic && !rs.fair && rs.period > longDays()) return { cls: 'bad', pill: '불공평', note: [[rt + ' 보정을 넣어도 순번 횟수가 고르게 맞지 않아 '], ['차이가 쌓입니다', 1], ['.']], brief: '보정을 넣어도 순번 횟수가 고르게 맞지 않아 차이가 쌓입니다.' };
+      if (rs.periodic && rs.fair) {
+        if (!R.F || rs.fair.days <= R.F) return { cls: 'good', pill: '공평', note: [[rt + ' 보정으로 '], [rs.fair.days + '일', 1], ['마다 모든 순번을 똑같이 맡습니다.']], brief: rs.fair.days + '일마다 모든 순번을 똑같이 맡습니다.' };
+        return { cls: 'mid', pill: '늦게 공평', note: [[rt + ' 보정으로는 '], [rs.fair.days + '일', 1], ['이 지나야 모든 순번 횟수가 같아집니다. 그 사이에는 차이가 벌어집니다.']], brief: rs.fair.days + '일이 지나야 모든 순번 횟수가 같아지고, 그 사이에는 차이가 벌어집니다.' };
+      }
+      if (rs.periodic) return { cls: 'bad', pill: '불공평', note: [[rt + ' 보정을 넣어도 '], [rs.period + '일', 1], ['마다 같은 쏠림이 되풀이되어 차이가 계속 쌓입니다.']], brief: '보정을 넣어도 ' + rs.period + '일마다 같은 쏠림이 되풀이되어 차이가 계속 쌓입니다.' };
+      if (rs.eqDay) return { cls: 'bad', pill: '불공평', note: [['달마다 날 수가 달라 '], [rt, 1], [' 보정으로는 순번 횟수가 일정한 주기로 맞지 않습니다.']], brief: '달마다 날 수가 달라 순번 횟수가 일정한 주기로 맞지 않습니다.' };
+      return { cls: 'bad', pill: '불공평', note: [[rt + ' 보정으로는 '], ['10년', 1], ['을 돌려도 순번 횟수가 똑같아지는 날이 없습니다.']], brief: '10년을 돌려도 순번 횟수가 똑같아지는 날이 없습니다.' };
+    }
     if (!c.needAdjust) return { cls: 'good', pill: '공평', note: [['보정 없이도 '], [c.fair.days + '일', 1], ['마다 모든 순번을 똑같이 맡습니다.']] };
     if (c.h > 1) return { cls: 'bad', pill: '불공평', note: [[S.N + '대와 ' + S.sCur + '칸은 공약수 ' + iga(c.h) + ' 있어, 기사마다 '], [c.cycleN + '개 순번만', 1], [' 돌아가며 맡습니다.']] };
     return { cls: 'bad', pill: '불공평', note: [[''], [c.L + '일', 1], ['마다 같은 배정이 그대로 되풀이되어, 특정 기사에게 특정 순번이 계속 몰립니다.']] };
@@ -989,10 +1253,15 @@ var RE = (function () {
   function impState() {
     var m = R.imp;
     if (!m.fair) return { cls: 'mid', pill: '확인 필요', note: [['이 조건은 계산할 수 없습니다. 개선 방식의 칸 수를 바꿔 보세요.']] };
-    if (R.same) return { cls: 'mid', pill: '바꿀 것 없음', note: [['현재 방식이 이미 공평합니다. 지금처럼 매일 ' + m.s + '칸이면 됩니다.']] };
-    var keep = m.s === R.cur.s;
-    if (!m.needAdjust) return { cls: 'good', pill: '공평', note: [['매일 '], [m.s + '칸', 1], ['으로 바꾸면 보정일 없이 '], [m.fair.days + '일', 1], ['마다 공평해집니다.']] };
-    return { cls: 'good', pill: '공평', note: [[keep ? '지금처럼 매일 ' : '매일 '], [m.s + '칸', 1], ['씩 돌리고, '], [m.L + '일', 1], ['마다 하루만 '], [moveWord(m.boundaryShift), 1], [(m.boundaryShift === 0 ? '' : ' 이동') + '합니다. ']]
+    if (R.same) return { cls: 'mid', pill: '바꿀 것 없음', note: [[R.rule ? '현재 방식(' + curDesc() + ')이 개선 방식과 같습니다. 지금처럼 하면 됩니다.' : '현재 방식이 이미 공평합니다. 지금처럼 매일 ' + m.s + '칸이면 됩니다.']] };
+    var keep = m.s === R.cur.s, rn = R.rule ? ruleName(R.rule) : '';
+    if (!m.needAdjust) {
+      if (R.rule && keep) return { cls: 'good', pill: '공평', note: [[rn + '을 빼고 매일 '], [m.s + '칸', 1], ['만 이동하면 '], [m.fair.days + '일', 1], ['마다 공평해집니다.']] };
+      return { cls: 'good', pill: '공평', note: [['매일 '], [m.s + '칸', 1], [R.rule ? '으로 바꾸고 보정을 빼면 ' : '으로 바꾸면 보정일 없이 '], [m.fair.days + '일', 1], ['마다 공평해집니다.']] };
+    }
+    var head = R.rule ? [['매일 '], [m.s + '칸', 1], [(keep ? '은 그대로 두고, ' : '으로 바꾸고, ') + rn + ' 대신 ']]
+      : [[keep ? '지금처럼 매일 ' : '매일 '], [m.s + '칸', 1], ['씩 돌리고, ']];
+    return { cls: 'good', pill: '공평', note: head.concat([[m.L + '일', 1], ['마다 하루만 '], [moveWord(m.boundaryShift), 1], [(m.boundaryShift === 0 ? '' : ' 이동') + '합니다. ']])
       .concat([[m.fair.days + '일', 1], ['이면 모든 순번 횟수가 같아집니다.']]) };
   }
 
@@ -1023,6 +1292,20 @@ var RE = (function () {
     });
   }
   function setPill(sel, st) { var el = $(sel); el.className = 'pill ' + st.cls; el.textContent = st.pill; }
+  /* 현재 방식 보정 입력: 없음 · 며칠마다 · 매주 · 매월 */
+  function renderRuleCtl() {
+    var r = S.rule, k = r.kind, mv = ruleMove();
+    segSet('#seg-rule', k);
+    $('#rule-row').hidden = k === 'none';
+    $('#rg-every').hidden = k !== 'every'; $('#rg-week').hidden = k !== 'week'; $('#rg-month').hidden = k !== 'month';
+    $('#in-rn').value = String(r.n);
+    fillSelect('#in-rwd', WDN.map(function (x, i) { return [i, x]; }), r.wd);
+    fillSelect('#in-rmd', range(1, 28).map(function (x) { return [x, x + '일']; }), r.md);
+    $('#rm-val').textContent = String(mv);
+    $('#rm-minus').disabled = mv <= 0; $('#rm-plus').disabled = mv >= S.N - 1;
+    var df = mv - S.sCur;
+    $('#rule-diff').textContent = (k === 'every' ? '시작일부터 ' + r.n + '일마다 · ' : '') + (df === 0 ? '평소와 같아 보정 없음' : '평소 ' + S.sCur + '칸보다 ' + Math.abs(df) + '칸 ' + (df > 0 ? '더' : '덜'));
+  }
   function renderBoard() {
     var m = R.imp, cs = curState(), is = impState();
     $('#in-N').value = S.N;
@@ -1031,6 +1314,7 @@ var RE = (function () {
     $('#sc-minus').disabled = S.sCur <= 1;
     $('#sc-plus').disabled = S.sCur >= S.N - 1;
     segSet('#seg-dir', S.dir);
+    renderRuleCtl();
     setPill('#cur-pill', cs); fillRich($('#cur-note'), cs.note);
     setPill('#imp-pill', is); fillRich($('#imp-note'), is.note);
     setLed('#c1', String(m.s), '칸', R.sImpWhy + ' · ' + dirWord());
@@ -1044,15 +1328,15 @@ var RE = (function () {
     }
     var flow = $('#flow'); flow.textContent = '';
     if (m.fair) {
-      var p = S.N, row = h('div', { class: 'flow-row' }, [h('span', { text: '시작일 ' + p + '번 기사' })]);
+      var p = S.N, sc = R.sc.imp, row = h('div', { class: 'flow-row' }, [h('span', { text: '시작일 ' + p + '번 기사' })]);
       for (var d = 0; d < 8; d++) {
         if (d) row.appendChild(h('span', { class: 'arrow', text: '›' }));
-        row.appendChild(h('span', { class: 'chip', text: String(RE.posOf(p, d, m.N, m.dir, m.s, m.e, m.L, m.needAdjust)) }));
+        row.appendChild(h('span', { class: 'chip', text: String(RE.posS(sc, p, d)) }));
       }
       row.appendChild(h('span', { class: 'arrow', text: '› …' }));
       flow.appendChild(row);
       if (m.needAdjust) {
-        var a = RE.posOf(p, m.L - 1, m.N, m.dir, m.s, m.e, m.L, true), b = RE.posOf(p, m.L, m.N, m.dir, m.s, m.e, m.L, true);
+        var a = RE.posS(sc, p, m.L - 1), b = RE.posS(sc, p, m.L);
         flow.appendChild(h('div', { class: 'flow-row' }, [
           h('span', { text: '첫 보정일 ' + fmtD(addDays(R.start, m.L)) }),
           h('span', { class: 'chip', text: String(a) }), h('span', { class: 'arrow', text: '›' }),
@@ -1067,18 +1351,23 @@ var RE = (function () {
   /* ---------- 비교 화면: 결과 ---------- */
   function niceStep(x) { if (x <= 1) return 1; var p = Math.pow(10, Math.floor(Math.log(x) / Math.LN10)), m = x / p; return (m <= 1 ? 1 : m <= 2 ? 2 : m <= 5 ? 5 : 10) * p; }
   function verdictParts() {
-    var c = R.sum.cur.all, m = R.sum.imp.all, yrs = S.years + '년';
-    if (R.same) return [['현재 방식이 이미 공평합니다. ' + yrs + ' 동안 기사마다 첫차를 '], [rangeTxt(c.amLo, c.amHi), 1], [' 맡습니다.']];
+    var c = R.sum.cur.all, m = R.sum.imp.all, per = R.D + '일';
+    if (R.same) return [['현재 방식이 이미 공평합니다. ' + per + ' 동안 기사마다 첫차를 '], [rangeTxt(c.amLo, c.amHi), 1], [' 맡습니다.']];
+    if (c.amLo === m.amLo && c.amHi === m.amHi) return [[per + ' 동안 첫차는 현재와 개선 모두 기사마다 '], [rangeTxt(c.amLo, c.amHi), 1], [' 맡습니다.']];
     var mid;
     if (c.amLo === 0) mid = ' 맡아 한 번도 못 맡는 기사까지 생기지만, ';
     else if (c.amHi / c.amLo >= 1.2) mid = ' 맡아 최대 ' + (Math.round(c.amHi / c.amLo * 10) / 10) + '배 차이가 나지만, ';
     else mid = ' 맡지만, ';
-    return [[yrs + ' 동안 첫차를 현재는 기사마다 '], [rangeTxt(c.amLo, c.amHi), 1], [mid + '개선하면 '], [rangeTxt(m.amLo, m.amHi), 1], ['으로 고르게 맡습니다.']];
+    return [[per + ' 동안 첫차를 현재는 기사마다 '], [rangeTxt(c.amLo, c.amHi), 1], [mid + '개선하면 '], [rangeTxt(m.amLo, m.amHi), 1], [m.amLo === m.amHi ? '씩 똑같이 맡습니다.' : '으로 고르게 맡습니다.']];
   }
   function renderResults() {
-    $('#res-title').textContent = S.years + '년 돌려 보면';
-    segSet('#seg-years', S.years);
-    $('#res-sub').textContent = '기사마다 맡는 횟수 · ' + S.groups + '개 조, 시작 순번 ' + S.N + '가지 전체';
+    $('#res-title').textContent = R.D + '일 돌려 보면';
+    $('#in-days').value = String(R.D);
+    segSet('#seg-days', S.days === 'fair' ? 'fair' : S.days);
+    var pn = periodName(R.D), end = addDays(R.start, R.D - 1);
+    var sub = (pn ? pn + ' · ' : '') + fmtD(R.start) + ' ~ ' + fmtD(end) + ' · ' + S.groups + '개 조, 시작 순번 ' + S.N + '가지 전체에서 기사마다 맡는 횟수';
+    if (S.days === 'fair' && R.F > DMAX) sub = '공평 주기(' + R.F + '일)가 길어 ' + DMAX + '일까지만 계산합니다. ' + sub;
+    $('#res-sub').textContent = sub;
     var box = $('#range-rows'); box.textContent = '';
     var items = [{ t: '첫차', s: '오전 ' + S.fa + '번', k: 'am' }];
     if (hasPM()) items.push({ t: '막차', s: '오후 ' + fpVal() + '번', k: 'pm' });
@@ -1111,9 +1400,19 @@ var RE = (function () {
 
   /* 선 그래프 (SVG, 호버·키보드 십자선) */
   var chartState = { d: null };
+  /* 가로축 눈금: 꼭 맞는 해(365일 배수)는 개월·년, 나머지는 날 수 */
   function xTicks(D) {
-    if (D >= 730) return [[0, '시작'], [182, '6개월'], [365, '1년'], [547, '1년 6개월'], [D - 1, '2년']];
-    return [[0, '시작'], [91, '3개월'], [182, '6개월'], [273, '9개월'], [D - 1, '1년']];
+    var last = D - 1, t = [[0, '시작']], v;
+    if (D % 365 === 0) {
+      var yrs = D / 365, stepM = yrs <= 1 ? 3 : yrs <= 2 ? 6 : yrs <= 5 ? 12 : 24;
+      for (v = stepM; v < yrs * 12; v += stepM) t.push([Math.round(v * 365 / 12) - 1, v % 12 === 0 ? (v / 12) + '년' : (v >= 12 ? Math.floor(v / 12) + '년 ' : '') + (v % 12) + '개월']);
+      t.push([last, yrs + '년']);
+      return t;
+    }
+    var st = niceStep(D / 4);
+    for (v = st; v - 1 < last - st * 0.45; v += st) t.push([v - 1, v + '일']);
+    t.push([last, D + '일']);
+    return t;
   }
   function drawChart() {
     var host = $('#chart'); host.textContent = '';
@@ -1137,8 +1436,8 @@ var RE = (function () {
       if (ms.length <= 12) {
         var spacing = ms.length > 1 ? X(ms[1]) - X(ms[0]) : pw;
         ms.forEach(function (d) {
-          svg.appendChild(el('line', { class: 'marker', x1: X(d), y1: pt, x2: X(d), y2: pt + ph }));
-          if (spacing >= 44) svg.appendChild(el('text', { class: 'marker-t', x: X(d), y: pt - 7, 'text-anchor': 'middle' }, d + '일'));
+          svg.appendChild(el('line', { class: 'marker', x1: X(d - 1), y1: pt, x2: X(d - 1), y2: pt + ph }));
+          if (spacing >= 44) svg.appendChild(el('text', { class: 'marker-t', x: X(d - 1), y: pt - 7, 'text-anchor': 'middle' }, d + '일'));
         });
       }
     }
@@ -1204,8 +1503,19 @@ var RE = (function () {
     var c = R.cur, m = R.imp, w = R.w, el = $('#explain'); el.textContent = '';
     function para(text, cls) { el.appendChild(h('p', cls ? { class: cls, text: text } : { text: text })); }
     function head(text, key) { el.appendChild(h('h3', null, [key ? h('i', { class: 'key ' + key }) : null, text])); }
-    head('현재 방식 · 매일 ' + c.s + '칸 ' + dirWord(), 'cur');
-    if (!c.needAdjust) para('순번 한 바퀴(' + c.cycleN + '일)와 근무 주기(' + c.T + '일)가 ' + c.L + '일마다 다시 맞물리는데, 그 안에서 이미 모든 순번이 고르게 돌아갑니다. 그래서 보정 없이도 ' + c.fair.days + '일마다 공평합니다.');
+    head('현재 방식 · ' + curDesc() + ' · ' + dirWord(), 'cur');
+    if (R.rule) {
+      var rs = R.ruleSt, rt = ruleText(R.rule);
+      if (rs.periodic && ((rs.fair && rs.fair.days > longDays()) || (!rs.fair && rs.period > longDays()))) para(ruleName(R.rule) + '은 근무 주기와 아주 긴 간격으로만 맞물려서, 10년 안에는 모든 순번 횟수가 똑같아지지 않습니다.');
+      else if (rs.periodic) {
+        var cycTxt = R.rule.kind === 'week' ? '한 주(7일)와' : '보정 간격(' + rs.n + '일)과';
+        if (rs.fair) para(cycTxt + ' 근무 주기(' + c.T + '일)가 ' + rs.Q0 + '일마다 함께 돌아오고, 그때마다 순번이 조금씩 밀려 ' + rs.fair.days + '일이면 모든 순번 횟수가 같아집니다.' + (R.F && rs.fair.days > R.F ? ' 개선 방식(' + R.F + '일)보다 오래 걸리고, 그 사이에는 기사마다 차이가 벌어집니다.' : ''));
+        else para(cycTxt + ' 근무 주기(' + c.T + '일)가 ' + rs.Q0 + '일마다 함께 돌아오고, ' + rs.period + '일이 지나면 같은 배정이 처음부터 그대로 되풀이됩니다. 그 ' + rs.period + '일 안에서 순번 횟수가 고르게 맞지 않아, 되풀이될 때마다 같은 기사에게 같은 순번이 더 쌓입니다.');
+      } else para('달마다 날 수(28~31일)가 달라 ' + ruleWhen(R.rule) + ' 보정일 사이 간격이 일정하지 않습니다. 그래서 근무 주기와 일정하게 맞물리지 않고, ' + (rs.eqDay ? '순번 횟수가 같아지는 날이 가끔 있어도 일정하게 되풀이되지 않습니다.' : '10년을 돌려 봐도 모든 기사의 순번 횟수가 똑같아지는 날이 없습니다.'));
+      var p0 = S.N, bc0 = RE.blockCountsS(R.sc.cur, R.phases[0], p0, R.D), r0 = RE.rng(bc0.am);
+      if (r0[1] > r0[0]) para('예) 1조에서 시작일에 ' + p0 + '번인 기사는 ' + R.D + '일 동안 오전 순번을 순번에 따라 적게는 ' + r0[0] + '번, 많게는 ' + r0[1] + '번 맡습니다. (' + rt + ' 보정 포함)', 'example');
+    }
+    else if (!c.needAdjust) para('순번 한 바퀴(' + c.cycleN + '일)와 근무 주기(' + c.T + '일)가 ' + c.L + '일마다 다시 맞물리는데, 그 안에서 이미 모든 순번이 고르게 돌아갑니다. 그래서 보정 없이도 ' + c.fair.days + '일마다 공평합니다.');
     else if (c.h > 1) para(S.N + '대와 ' + c.s + '칸은 공약수 ' + iga(c.h) + ' 있어서, 매일 ' + c.s + '칸씩 움직이면 기사마다 ' + c.cycleN + '개 순번만 돌아가며 맡고 나머지 순번은 아예 맡지 않습니다. ' + c.L + '일마다 같은 배정이 되풀이됩니다.');
     else {
       para('순번은 ' + c.cycleN + '일이면 한 바퀴 돌고, 근무 형태는 ' + c.T + '일마다 되풀이됩니다. 두 주기가 ' + c.L + '일마다 다시 맞물려서, 매일 ' + c.s + '칸씩만 돌리면 ' + c.L + '일마다 같은 배정이 그대로 반복됩니다.');
@@ -1243,14 +1553,14 @@ var RE = (function () {
       para('보정일에 ' + moveWord(m.s + 1) + ' 대신 ' + moveWord(m.s - 1) + (m.s - 1 === 0 ? '' : '을 이동') + '해도 똑같이 공평해집니다. 설정에서 고를 수 있습니다.', 'note');
     }
     head('개선 방식의 칸 수');
-    if (m.s === c.s) para('현재와 같은 ' + m.s + '칸을 그대로 씁니다. 기사들이 익숙한 순서는 그대로 두고 보정일만 더합니다. 설정에서 추천 칸 수(' + c.sAuto + '칸)나 다른 값으로 바꿔 비교할 수 있습니다.');
+    if (m.s === c.s) para('현재와 같은 ' + m.s + '칸을 그대로 씁니다. 기사들이 익숙한 순서는 그대로 두고 ' + (R.rule ? '보정하는 날만 바꿉니다' : '보정일만 더합니다') + '. 설정에서 추천 칸 수(' + c.sAuto + '칸)나 다른 값으로 바꿔 비교할 수 있습니다.');
     else if (S.sImp === 'rec') para('추천 칸 수 ' + m.s + '칸입니다. ' + m.W + '일 연속 근무하는 동안 순번이 앞·중간·뒤로 고르게 섞이도록, 차량 대수 ÷ ' + m.W + ' 근처에서 차량 대수와 공약수가 없는 수를 골랐습니다.');
     else para('설정에서 직접 고른 ' + m.s + '칸입니다. 현재와 같은 칸 수로 되돌리려면 설정에서 "현재와 같게"를 고르세요.');
   }
 
   /* ---------- 비교 화면: 조별 · 기사 한 명 ---------- */
   function renderGroupTable() {
-    $('#grp-note').textContent = S.years + '년(' + R.D + '일) 동안, 조마다 시작 순번 ' + S.N + '가지를 모두 넣어 계산한 첫차·막차 횟수 범위입니다.';
+    $('#grp-note').textContent = R.D + '일 동안, 조마다 시작 순번 ' + S.N + '가지를 모두 넣어 계산한 첫차·막차 횟수 범위입니다.';
     var head = ['조', '시작일 근무', '첫차 현재', '첫차 개선'];
     if (hasPM()) head.push('막차 현재', '막차 개선');
     var tb = h('tbody');
@@ -1295,7 +1605,7 @@ var RE = (function () {
   function renderCal() {
     var m = R.imp, list = $('#bnd-list'); list.textContent = '';
     if (m.fair && m.needAdjust) {
-      $('#bnd-title').textContent = '보정일 (그날만 ' + moveWord(m.boundaryShift) + ')';
+      $('#bnd-title').textContent = (R.rule && !R.same ? '개선 방식 보정일' : '보정일') + ' (그날만 ' + moveWord(m.boundaryShift) + ')';
       $('#bnd-sub').textContent = '개선 방식 시작일(' + fmtD(R.start) + ')부터 ' + m.L + '일마다 돌아옵니다. 평소에는 매일 ' + m.s + '칸입니다. ' + R.D + '일 동안 ' + R.bnd.length + '번 있습니다.';
       var nextMarked = false;
       R.bnd.forEach(function (d, i) {
@@ -1313,8 +1623,9 @@ var RE = (function () {
     fillSelect('#cal-g', groupItems(), S.cg);
     fillSelect('#cal-p', posItems(), cpVal());
     segSet('#seg-cal', S.calScheme);
-    var key = S.calScheme, an = schemeAn(key), adj = schemeAdj(key);
-    $('#leg-b').hidden = !adj;
+    var key = S.calScheme, an = schemeAn(key), sc = schemeOf(key), spOn = hasSpecial(key);
+    $('#leg-b').hidden = !spOn;
+    $('#leg-b-t').textContent = spOn ? '보정일 (그날만 ' + moveWord(specialMove(key)) + ')' : '보정일';
     var D = R.D, start = R.start, end = addDays(start, D - 1);
     var ym = /^(\d{4})-(\d{2})$/.exec(S.calMonth || '');
     var y = ym ? +ym[1] : start.getFullYear(), mo = ym ? +ym[2] - 1 : start.getMonth();
@@ -1330,14 +1641,14 @@ var RE = (function () {
     for (var dn = 1; dn <= dim; dn++) {
       var dt = new Date(y, mo, dn), d = diffDays(start, dt);
       if (d < 0 || d >= D) { grid.appendChild(h('div', { class: 'day out' }, [h('span', { class: 'dn', text: String(dn) })])); continue; }
-      var r = RE.driverDay(an, ph, p, d, adj);
-      var isB = adj && d > 0 && d % an.L === 0;
+      var r = RE.dayS(sc, ph, p, d);
+      var isB = r.sp > 0;
       var cls = 'day ' + r.st + (isB ? ' bnd' : '') + (dt.getTime() === TODAY.getTime() ? ' today' : '');
       var lab = r.st === 'A' ? '오전' : r.st === 'P' ? '오후' : '휴무';
-      var cell = h('div', { class: cls, 'aria-label': (mo + 1) + '월 ' + dn + '일 ' + lab + (r.st === 'O' ? '' : ' ' + r.pos + '번') }, [
+      var cell = h('div', { class: cls, 'aria-label': (mo + 1) + '월 ' + dn + '일 ' + lab + (r.st === 'O' ? '' : ' ' + r.pos + '번') + (isB ? ' · 보정일 ' + r.mv + '칸' : '') }, [
         h('span', { class: 'dn', text: String(dn) }), h('span', { class: 'st', text: lab }), h('span', { class: 'ps', text: r.st === 'O' ? '' : String(r.pos) })
       ]);
-      if (isB) cell.setAttribute('data-b', an.boundaryShift + '칸');
+      if (isB) cell.setAttribute('data-b', r.mv + '칸');
       grid.appendChild(cell);
     }
     var cnt = RE.driverCounts(an, R.sim, key, S.cg, p), otherKey = key === 'imp' ? 'cur' : 'imp';
@@ -1399,23 +1710,26 @@ var RE = (function () {
   function mean(a) { return a.reduce(function (s, x) { return s + x; }, 0) / (a.length || 1); }
   function schemeName(key) {
     if (key === 'imp') { var m = R.imp; return '개선 방식 · 매일 ' + m.s + '칸' + (m.needAdjust ? ' + ' + m.L + '일마다 ' + moveWord(m.boundaryShift) : ''); }
-    return '현재 방식 · 매일 ' + R.cur.s + '칸' + (R.same ? ' (이미 공평)' : '');
+    return '현재 방식 · ' + curDesc() + (R.same ? ' (이미 공평)' : '');
   }
   function cycleInfo() {
     var m = R.imp;
     if (!m.fair) return null;
     var key = R.same ? 'cur' : S.cycScheme;
-    return { F: m.fair.days, T: R.T, ph: R.phases[S.cg], p: cpVal(), key: key, an: schemeAn(key), adj: schemeAdj(key), stages: colStages(R.phases[S.cg]) };
+    return { F: m.fair.days, T: R.T, ph: R.phases[S.cg], p: cpVal(), key: key, an: schemeAn(key), sc: schemeOf(key), stages: colStages(R.phases[S.cg]) };
   }
   /* 표를 몇 일씩 구간으로 끊어 보여 줄지 (0이면 끊지 않음) */
+  /* 현재 방식의 보정이 개선 방식과 똑같으면 개선 방식처럼 구간을 나눠 보여 준다 */
+  function asImp(key) { return key === 'imp' || (R.same && !!R.rule); }
   function blockLen(key, F) {
-    if (key === 'imp') return R.imp.needAdjust ? R.imp.L : 0;
+    if (asImp(key)) return R.imp.needAdjust ? R.imp.L : 0;
+    if (R.rule) return 0;
     return R.cur.L < F ? R.cur.L : 0;
   }
   function blockNote(F, L, k, key) {
     var a = k * L + 1, b = Math.min(F, (k + 1) * L), t = (k + 1) + '구간 · ' + a + '~' + b + '일';
     if (k === 0) return t;
-    if (key === 'imp') return t + ' · 첫날 ' + mdw(addDays(R.start, k * L)) + '만 ' + moveWord(R.imp.boundaryShift) + ' 이동';
+    if (asImp(key)) return t + ' · 첫날 ' + mdw(addDays(R.start, k * L)) + '만 ' + moveWord(R.imp.boundaryShift) + ' 이동';
     return t + (R.cur.needAdjust ? ' · 1구간과 같은 순번이 그대로 되풀이' : ' · 1구간과 같음 (그래도 고르게 돎)');
   }
   function countGroups(arr) {
@@ -1434,15 +1748,26 @@ var RE = (function () {
     }
     return label + ' 순번에 따라 ' + gs[gs.length - 1].v + '~' + gs[0].v + '번';
   }
-  function cycleCounts(ci, key) { return RE.blockCounts(schemeAn(key), ci.ph, ci.p, ci.F, schemeAdj(key)); }
+  function cycleCounts(ci, key) { return RE.blockCountsS(schemeOf(key), ci.ph, ci.p, ci.F); }
+  function uniform(a) { var r = RE.rng(a); return r[0] === r[1]; }
+  /* 현재 방식이 같은 기간 동안 고르지 않은 까닭 */
+  function curReason() {
+    if (R.rule) {
+      var rs = R.ruleSt;
+      if (rs.periodic && ((rs.fair && rs.fair.days > longDays()) || (!rs.fair && rs.period > longDays()))) return ruleName(R.rule) + '으로는 10년 안에 순번 횟수가 똑같아지지 않기 때문입니다.';
+      if (rs.periodic) return rs.fair ? '현재 방식은 ' + rs.fair.days + '일이 지나야 같아지기 때문입니다.' : ruleName(R.rule) + '으로는 ' + rs.period + '일마다 같은 쏠림이 되풀이되기 때문입니다.';
+      return '달마다 날 수가 달라 ' + ruleName(R.rule) + '이 고르게 퍼지지 않기 때문입니다.';
+    }
+    if (!R.cur.needAdjust) return '현재 방식은 ' + R.cur.fair.days + '일마다 같아지기 때문입니다.';
+    return R.cur.h > 1 ? '공약수 때문에 일부 순번만 돌기 때문입니다.' : R.cur.L + '일마다 같은 순번이 그대로 되풀이되기 때문입니다.';
+  }
   function fairCountText(ci, key, cnt) {
-    var an = schemeAn(key), fairNow = key === 'imp' || !R.cur.needAdjust;
-    if (fairNow) {
+    if (uniform(cnt.am) && (!hasPM() || uniform(cnt.pm))) {
       var t = ci.F + '일 동안 1~' + S.N + '번 모든 순번을 오전 ' + cnt.am[0] + '번' + (hasPM() ? ', 오후 ' + cnt.pm[0] + '번' : '') + '씩 똑같이 맡습니다.';
-      if (RE.columnsComplete(RE.cycleGrid(an, ci.ph, ci.p, schemeAdj(key), ci.F), S.N)) t += ' 표의 세로줄(같은 근무 일차)마다 1~' + S.N + '번이 한 번씩 모두 나옵니다.';
+      if (RE.columnsComplete(RE.cycleGridS(schemeOf(key), ci.ph, ci.p, ci.F), S.N)) t += ' 표의 세로줄(같은 근무 일차)마다 1~' + S.N + '번이 한 번씩 모두 나옵니다.';
       return t;
     }
-    return '같은 ' + ci.F + '일 동안 ' + spreadText(cnt.am, '오전') + (hasPM() ? ', ' + spreadText(cnt.pm, '오후') : '') + '입니다. ' + (R.cur.h > 1 ? '공약수 때문에 일부 순번만 돌기 때문입니다.' : R.cur.L + '일마다 같은 순번이 그대로 되풀이되기 때문입니다.');
+    return '같은 ' + ci.F + '일 동안 ' + spreadText(cnt.am, '오전') + (hasPM() ? ', ' + spreadText(cnt.pm, '오후') : '') + '입니다. ' + curReason();
   }
 
   function renderCycle() {
@@ -1458,14 +1783,16 @@ var RE = (function () {
     }
     var m = R.imp;
     $('#cyc-title').textContent = ci.F + '일 한 바퀴';
-    if (R.same) $('#cyc-sub').textContent = '현재 방식이 이미 공평합니다. 매일 ' + R.cur.s + '칸씩 ' + ci.F + '일이면 한 바퀴가 끝납니다. 표의 한 줄이 근무 ' + ci.T + '일입니다.';
+    if (R.same) $('#cyc-sub').textContent = '현재 방식이 이미 공평합니다. ' + curDesc() + '으로 ' + ci.F + '일이면 한 바퀴가 끝납니다. 표의 한 줄이 근무 ' + ci.T + '일입니다.';
     else $('#cyc-sub').textContent = (m.needAdjust ? '개선 방식은 ' + m.L + '일씩 ' + (ci.F / m.L) + '구간이고, 구간이 바뀌는 날만 ' + m.s + '칸 대신 ' + moveWord(m.boundaryShift) + (m.boundaryShift === 0 ? '' : '을 이동') + '합니다. ' : '개선 방식은 보정일 없이 매일 ' + m.s + '칸입니다. ') + '표의 한 줄이 근무 ' + ci.T + '일입니다.';
     $('#seg-cyc').hidden = R.same;
     segSet('#seg-cyc', ci.key);
     var segB = $('#seg-cyc').children;
     segB[0].textContent = '개선 · ' + (m.needAdjust ? m.s + '칸+보정' : m.s + '칸');
-    segB[1].textContent = '현재 · ' + R.cur.s + '칸';
-    $('#leg-bd').hidden = !ci.adj;
+    segB[1].textContent = '현재 · ' + R.cur.s + '칸' + (R.rule ? '+보정' : '');
+    var spOn = hasSpecial(ci.key);
+    $('#leg-bd').hidden = !spOn;
+    $('#leg-bd-t').textContent = spOn ? '보정일 (그날만 ' + moveWord(specialMove(ci.key)) + ')' : '보정일';
     var hb = $('#hl-btns'); hb.textContent = '';
     var opts = [['첫차', S.fa, '오전']];
     if (hasPM()) opts.push(['막차', fpVal(), '오후']);
@@ -1481,7 +1808,7 @@ var RE = (function () {
 
   function renderCycleGrid(ci) {
     var hl = hlVal(), wrap = $('#cyc-wrap'), L = blockLen(ci.key, ci.F);
-    var grid = RE.cycleGrid(ci.an, ci.ph, ci.p, ci.adj, ci.F);
+    var grid = RE.cycleGridS(ci.sc, ci.ph, ci.p, ci.F);
     var tbl = h('table', { class: 'cyc', style: 'min-width:' + (36 + ci.T * 22) + 'px' });
     var cg = h('colgroup', null, [h('col', { style: 'width:36px' })]);
     for (var i = 0; i < ci.T; i++) cg.appendChild(h('col'));
@@ -1506,9 +1833,9 @@ var RE = (function () {
       var tr = h('tr', null, [h('th', { class: 'rl', scope: 'row', text: md2(addDays(R.start, d0)) })]);
       row.forEach(function (x) {
         if (!x) { tr.appendChild(h('td')); return; }
-        var isBd = ci.adj && x.d > 0 && x.d % ci.an.L === 0;
+        var isBd = x.sp > 0;
         var cls = x.st + (x.st !== 'O' && x.pos === hl ? ' hl' : '') + (isBd ? ' bd' : '');
-        tr.appendChild(h('td', { class: cls, 'data-q': String(x.pos), 'data-st': x.st, title: fmtD(addDays(R.start, x.d)) + ' · ' + KIND[x.st] + ' · ' + x.pos + '번' + (isBd ? ' · 보정일' : ''), text: String(x.pos) }));
+        tr.appendChild(h('td', { class: cls, 'data-q': String(x.pos), 'data-st': x.st, title: fmtD(addDays(R.start, x.d)) + ' · ' + KIND[x.st] + ' · ' + x.pos + '번' + (isBd ? ' · 보정일 ' + x.mv + '칸' : ''), text: String(x.pos) }));
       });
       tb.appendChild(tr);
     });
@@ -1589,8 +1916,8 @@ var RE = (function () {
     return { lo: v('--heat-lo', '#E2F3EF'), hi: v('--heat-hi', '#0B5E54'), dark: '#0F1A1F', light: '#FFFFFF', label: v('--muted', '#56656F'), mark: v('--ink', '#16212A') };
   }
   function heatSets(ci, kind) {
-    var sets = [{ key: 'cur', name: R.same ? '현재 방식 (이미 공평)' : '현재 방식', M: RE.heatMatrix(R.cur, ci.ph, false, ci.F)[kind] }];
-    if (!R.same) sets.push({ key: 'imp', name: '개선 방식', M: RE.heatMatrix(R.imp, ci.ph, R.imp.needAdjust, ci.F)[kind] });
+    var sets = [{ key: 'cur', name: R.same ? '현재 방식 (이미 공평)' : '현재 방식', M: RE.heatMatrixS(R.sc.cur, ci.ph, ci.F)[kind] }];
+    if (!R.same) sets.push({ key: 'imp', name: '개선 방식', M: RE.heatMatrixS(R.sc.imp, ci.ph, ci.F)[kind] });
     return sets;
   }
   var heatState = [];
@@ -1670,11 +1997,12 @@ var RE = (function () {
   /* ---------- 자료: 요약 한 장 ---------- */
   function summaryModel() {
     var c = R.cur, m = R.imp, D = R.D, cs = curState(), sc = R.sum.cur.all, sm = R.sum.imp.all;
+    var pn = periodName(D);
     var md = {
       title: '시내버스 순번 공평 배정안',
       sub: '차량 ' + S.N + '대 · ' + S.groups + '개 조 · ' + patWord(R.w),
-      meta: '개선 방식 시작일 ' + fmtD(R.start) + ' · ' + D + '일(' + S.years + '년) 시뮬레이션 · ' + dirWord() + ' 이동',
-      curText: '매일 ' + c.s + '칸 · 보정 없음 — ' + plain(cs.note),
+      meta: '개선 방식 시작일 ' + fmtD(R.start) + ' · ' + D + '일' + (pn ? '(' + pn + ')' : '') + ' 시뮬레이션 · ' + dirWord() + ' 이동',
+      curText: (R.rule ? curDesc() : '매일 ' + c.s + '칸 · 보정 없음') + ' — ' + (cs.brief || plain(cs.note)),
       curBad: cs.cls === 'bad', tiles: [], why: '', rows: [], insight: plain(verdictParts()), bndDates: [], bndTitle: '보정일', foot: ''
     };
     md.tiles.push(['매일', String(m.s), '칸', R.sImpWhy + ' · ' + dirWord(), false]);
@@ -1685,14 +2013,15 @@ var RE = (function () {
       md.tiles.push(['공평 주기', String(m.fair.days), '일', '마다 순번 횟수가 같아짐', false]);
     }
     if (!m.fair) md.why = '개선 방식을 계산할 수 없는 조건입니다. 설정에서 개선 방식의 칸 수를 바꿔 보세요.';
-    else if (R.same) md.why = '현재 방식이 이미 공평해서 바꿀 것이 없습니다. 매일 ' + m.s + '칸씩 돌리면 ' + m.fair.days + '일마다 모든 기사가 모든 순번을 똑같이 맡습니다.';
-    else if (m.needAdjust) md.why = (m.s === c.s ? '지금처럼 매일 ' + m.s + '칸씩 돌리되, ' : '매일 ' + m.s + '칸씩 돌리고, ') + m.L + '일에 한 번만 ' + moveWord(m.boundaryShift) + (m.boundaryShift === 0 ? '' : '을 이동') + '하면 다음 ' + m.L + '일은 한 칸 어긋난 자리에서 시작합니다. 그래서 ' + m.fair.days + '일마다 모든 기사의 순번 횟수가 똑같아집니다. 평소와 달라지는 날은 ' + m.L + '일에 하루뿐입니다.';
-    else md.why = '매일 ' + m.s + '칸으로 바꾸면 보정일 없이 ' + m.fair.days + '일마다 모든 기사가 모든 순번을 똑같이 맡습니다.';
+    else if (R.same) md.why = '현재 방식이 이미 공평해서 바꿀 것이 없습니다. ' + curDesc() + '으로 돌리면 ' + m.fair.days + '일마다 모든 기사가 모든 순번을 똑같이 맡습니다.';
+    else if (m.needAdjust) md.why = (R.rule ? (m.s === c.s ? '매일 ' + m.s + '칸은 그대로 두고, ' : '매일 ' + m.s + '칸으로 바꾸고, ') + ruleName(R.rule) + ' 대신 ' : (m.s === c.s ? '지금처럼 매일 ' + m.s + '칸씩 돌리되, ' : '매일 ' + m.s + '칸씩 돌리고, ')) + m.L + '일에 한 번만 ' + moveWord(m.boundaryShift) + (m.boundaryShift === 0 ? '' : '을 이동') + '하면 다음 ' + m.L + '일은 한 칸 어긋난 자리에서 시작합니다. 그래서 ' + m.fair.days + '일마다 모든 기사의 순번 횟수가 똑같아집니다. 평소와 달라지는 날은 ' + m.L + '일에 하루뿐입니다.';
+    else md.why = (R.rule ? ruleName(R.rule) + '을 빼고 ' : '') + '매일 ' + m.s + '칸' + (R.rule && m.s === c.s ? '만 이동하면' : '으로 바꾸면') + ' 보정일 없이 ' + m.fair.days + '일마다 모든 기사가 모든 순번을 똑같이 맡습니다.';
     md.rows.push(['첫차 (오전 ' + S.fa + '번)', [sc.amLo, sc.amHi], [sm.amLo, sm.amHi]]);
     if (hasPM()) md.rows.push(['막차 (오후 ' + fpVal() + '번)', [sc.pmLo, sc.pmHi], [sm.pmLo, sm.pmHi]]);
     if (R.bnd.length) { md.bndTitle = '보정일 (그날만 ' + moveWord(m.boundaryShift) + ')'; md.bndDates = R.bnd.map(function (d) { return fmtD(addDays(R.start, d)); }); }
     md.foot = '가정: 순번 1번이 가장 먼저 출발(첫차), ' + S.N + '번이 가장 늦게 끝남(막차). 휴무일에도 순번은 날마다 이동. 조별 시작 근무는 설정값 기준이며 결과는 편성과 관계없이 같은 경향입니다.';
-    md.allText = [md.title, md.sub, md.meta, md.curText, md.why, md.insight, md.bndTitle, md.foot, md.bndDates.join(' ')].concat(md.tiles.map(function (t) { return t.join(' '); })).concat(md.rows.map(function (r) { return r[0]; })).join(' ') + ' 현재 개선 방식 어떻게 공평해지나요 년 돌려 본 결과 기사별 맡는 횟수 기사 사이 같은 순번 횟수 차이 시작 개월 번 외 0123456789~·()';
+    md.resTitle = D + '일 돌려 본 결과 · 기사별 맡는 횟수';
+    md.allText = [md.title, md.sub, md.meta, md.curText, md.why, md.insight, md.bndTitle, md.foot, md.resTitle, md.bndDates.join(' ')].concat(md.tiles.map(function (t) { return t.join(' '); })).concat(md.rows.map(function (r) { return r[0]; })).join(' ') + ' 현재 개선 방식 어떻게 공평해지나요 설명 년 일 돌려 본 결과 기사별 맡는 횟수 기사 사이 같은 순번 횟수 차이 시작 개월 번 외 0123456789~·()';
     return md;
   }
   function drawSummary(c, md, W, H) {
@@ -1743,7 +2072,7 @@ var RE = (function () {
     y += 40; lines.forEach(function (ln, i) { c.fillText(ln, M, y + i * 36); });
     y += lines.length * 36 + 30;
     /* 결과 막대 */
-    c.fillStyle = INK; c.font = F(700, 28, FB); c.fillText(S.years + '년 돌려 본 결과 · 기사별 맡는 횟수', M, y);
+    c.fillStyle = INK; c.font = F(700, 28, FB); c.fillText(md.resTitle, M, y);
     var vmax = 1; md.rows.forEach(function (r) { vmax = Math.max(vmax, r[1][1], r[2][1]); });
     var st = niceStep(vmax / 4), amax = Math.max(st, Math.ceil(vmax / st) * st);
     var trX = M + 120, trW = CW - 120 - 190;
@@ -1785,7 +2114,7 @@ var RE = (function () {
     for (var gv = 0; gv <= yMax; gv += ys) { c.fillStyle = GRID; c.fillRect(pL, Math.round(PY(gv)), pR - pL, 1); c.fillStyle = SOFT; c.fillText(String(gv), pL - 10, PY(gv) + 6); }
     if (R.imp.needAdjust && R.imp.fair) {
       var mk = []; for (var d0 = R.imp.fair.days; d0 < D; d0 += R.imp.fair.days) mk.push(d0);
-      if (mk.length <= 12) mk.forEach(function (d) { c.fillStyle = '#C3CDD1'; c.fillRect(Math.round(PX(d)), pT, 1, pB - pT); if (mk.length <= 6) { c.fillStyle = SOFT; c.textAlign = 'center'; c.font = F(500, 17, FN); c.fillText(d + '일', PX(d), pT - 8); } });
+      if (mk.length <= 12) mk.forEach(function (d) { c.fillStyle = '#C3CDD1'; c.fillRect(Math.round(PX(d - 1)), pT, 1, pB - pT); if (mk.length <= 6) { c.fillStyle = SOFT; c.textAlign = 'center'; c.font = F(500, 17, FN); c.fillText(d + '일', PX(d - 1), pT - 8); } });
     }
     c.fillStyle = SOFT; c.font = F(400, 18, FB);
     xTicks(D).forEach(function (t, k, arr) { c.textAlign = k === 0 ? 'left' : k === arr.length - 1 ? 'right' : 'center'; c.fillText(t[1], PX(t[0]), pB + 28); });
@@ -1867,7 +2196,7 @@ var RE = (function () {
   }
   function gridGeom(F, T) { var rows = F / T, rh = rows <= 18 ? 48 : rows <= 26 ? 40 : 34; return { rows: rows, rh: rh, bh: Math.round(rh * 0.66) }; }
   function drawGridPdf(c, x, y, w, ci, key, grid, rFrom, rTo, gg, hl) {
-    var an = schemeAn(key), adj = schemeAdj(key), L = blockLen(key, ci.F), T = ci.T, labW = 92, cw = (w - labW) / T, gap = 3, cx = x + labW;
+    var L = blockLen(key, ci.F), T = ci.T, labW = 92, cw = (w - labW) / T, gap = 3, cx = x + labW;
     c.textAlign = 'center'; c.textBaseline = 'middle';
     runsOf(ci.stages).forEach(function (run) {
       var bw = run.span * cw;
@@ -1900,7 +2229,7 @@ var RE = (function () {
         c.fillStyle = isHl ? PC.hlBg : cell.st === 'A' ? PC.amBg : cell.st === 'P' ? PC.pmBg : '#FFFFFF';
         rr(c, x2 + gap / 2, yy + gap / 2, cw - gap, gg.rh - gap, 7); c.fill();
         if (cell.st === 'O') { c.strokeStyle = PC.offBg; c.lineWidth = 1.5; rr(c, x2 + gap / 2 + 0.75, yy + gap / 2 + 0.75, cw - gap - 1.5, gg.rh - gap - 1.5, 7); c.stroke(); }
-        if (adj && cell.d > 0 && cell.d % an.L === 0) { c.fillStyle = PC.led; rr(c, x2 + gap / 2, yy + gap / 2, 7, gg.rh - gap, 3); c.fill(); }
+        if (cell.sp) { c.fillStyle = PC.led; rr(c, x2 + gap / 2, yy + gap / 2, 7, gg.rh - gap, 3); c.fill(); }
         c.fillStyle = isHl ? PC.hlInk : cell.st === 'A' ? PC.amInk : cell.st === 'P' ? PC.pmInk : PC.offInk;
         c.font = F(cell.st === 'O' ? 500 : 600, Math.round(gg.rh * (cell.st === 'O' ? 0.36 : 0.48)), FN);
         c.fillText(String(cell.pos), x2 + cw / 2, yy + gg.rh / 2 + 1);
@@ -1938,6 +2267,19 @@ var RE = (function () {
     c.textAlign = 'left'; c.textBaseline = 'alphabetic';
     return y;
   }
+  function cycleIntro(ci, key, hl) {
+    var intro = '한 줄이 근무 ' + ci.T + '일(' + patWord(R.w) + ')입니다. 칸의 숫자는 그날 맡는 순번이고, 진한 칸은 ' + hl + '번 순번입니다. ';
+    if (asImp(key)) intro += R.imp.needAdjust ? R.imp.L + '일마다 그날만 ' + moveWord(R.imp.boundaryShift) + (R.imp.boundaryShift === 0 ? '' : '을 이동') + '해(노란 표시), 다음 구간은 한 칸 어긋난 자리에서 시작합니다.' : '보정일 없이 매일 ' + R.imp.s + '칸만 이동합니다.';
+    else if (R.rule) intro += '평소에는 매일 ' + R.cur.s + '칸, ' + ruleWhen(R.rule) + '에는 그날만 ' + moveWord(R.rule.move) + (R.rule.move === 0 ? '' : '을 이동') + '합니다(노란 표시).';
+    else if (R.cur.needAdjust) intro += (R.cur.h > 1 ? '공약수 때문에 일부 순번만 돌고, ' : '') + '매일 ' + R.cur.s + '칸만 이동하면 ' + R.cur.L + '일마다 1구간과 똑같은 순번이 되풀이됩니다.';
+    else intro += '매일 ' + R.cur.s + '칸만 이동해도 모든 순번이 고르게 돌아옵니다.';
+    return intro;
+  }
+  /* PDF에 쓰는 글자를 미리 불러 두기 위한 글 모음 */
+  function cycleTexts(ci) {
+    var hl = hlVal();
+    return ['imp', 'cur'].map(function (k) { return schemeName(k) + ' ' + cycleIntro(ci, k, hl) + ' ' + fairCountText(ci, k, cycleCounts(ci, k)); }).join(' ');
+  }
   function cyclePlan(ci) {
     var W = 1240, H = 1754, M = 72, CW = W - 2 * M, hl = hlVal(), pages = [];
     var gg = gridGeom(ci.F, ci.T), keys = R.same ? ['cur'] : ['imp', 'cur'];
@@ -1947,13 +2289,9 @@ var RE = (function () {
     var title = ci.F + '일 한 바퀴';
     var GY0 = 352, GY1 = 230;
     keys.forEach(function (key) {
-      var an = schemeAn(key), adj = schemeAdj(key), L = blockLen(key, ci.F);
-      var grid = RE.cycleGrid(an, ci.ph, ci.p, adj, ci.F), cnt = RE.blockCounts(an, ci.ph, ci.p, ci.F, adj);
-      var name = schemeName(key);
-      var intro = '한 줄이 근무 ' + ci.T + '일(' + patWord(R.w) + ')입니다. 칸의 숫자는 그날 맡는 순번이고, 진한 칸은 ' + hl + '번 순번입니다. ';
-      if (key === 'imp') intro += R.imp.needAdjust ? R.imp.L + '일마다 그날만 ' + moveWord(R.imp.boundaryShift) + (R.imp.boundaryShift === 0 ? '' : '을 이동') + '해(노란 표시), 다음 구간은 한 칸 어긋난 자리에서 시작합니다.' : '보정일 없이 매일 ' + R.imp.s + '칸만 이동합니다.';
-      else if (R.cur.needAdjust) intro += (R.cur.h > 1 ? '공약수 때문에 일부 순번만 돌고, ' : '') + '매일 ' + R.cur.s + '칸만 이동하면 ' + R.cur.L + '일마다 1구간과 똑같은 순번이 되풀이됩니다.';
-      else intro += '매일 ' + R.cur.s + '칸만 이동해도 모든 순번이 고르게 돌아옵니다.';
+      var sc = schemeOf(key), L = blockLen(key, ci.F);
+      var grid = RE.cycleGridS(sc, ci.ph, ci.p, ci.F), cnt = RE.blockCountsS(sc, ci.ph, ci.p, ci.F);
+      var name = schemeName(key), intro = cycleIntro(ci, key, hl);
       var insight = fairCountText(ci, key, cnt);
       var r = 0, first = true;
       while (r < gg.rows) {
@@ -2021,21 +2359,21 @@ var RE = (function () {
       });
     });
     if (S.N <= 24) {
-      var keyA = R.same ? 'cur' : 'imp', anA = schemeAn(keyA), adjA = schemeAdj(keyA), LA = blockLen(keyA, ci.F);
+      var keyA = R.same ? 'cur' : 'imp', scA = schemeOf(keyA), LA = blockLen(keyA, ci.F);
       var maxRows = Math.floor((H - 110 - 300) / 27);
       var per = LA && LA <= maxRows ? LA * Math.floor(maxRows / LA) : ci.T * Math.max(1, Math.floor(maxRows / ci.T));
       for (var a = 0; a < ci.F; a += per) {
         (function (from, to) {
           pages.push(function (c, n, tot) {
             pdfFrame(c, W, H, { title: title, sub: '날짜별 순번표 · ' + (S.cg + 1) + '조 · ' + schemeName(keyA), foot: foot }, n, tot);
-            drawAppendix(c, M, 200, CW, ci, anA, adjA, from, to, hl, Math.min(30, (H - 110 - 290) / (to - from)));
+            drawAppendix(c, M, 200, CW, ci, scA, from, to, hl, Math.min(30, (H - 110 - 290) / (to - from)));
           });
         })(a, Math.min(ci.F, a + per));
       }
     }
     return pages;
   }
-  function drawAppendix(c, x, y, w, ci, an, adj, from, to, hl, rh) {
+  function drawAppendix(c, x, y, w, ci, sc, from, to, hl, rh) {
     var N = S.N, fixed = [64, 150, 66, 62], fw = fixed.reduce(function (s, v) { return s + v; }, 0), dw = (w - fw) / N;
     c.fillStyle = PC.mut; c.font = F(500, 18, FB); c.textBaseline = 'alphabetic';
     c.fillText((from + 1) + '~' + to + '일 · 오른쪽 칸은 시작일에 그 번호였던 기사가 그날 맡는 순번입니다. 진한 칸은 ' + hl + '번 순번입니다.', x, y + 20);
@@ -2049,7 +2387,7 @@ var RE = (function () {
     for (var p = 1; p <= N; p++) c.fillText(String(p), x + fw + (p - 0.5) * dw, ty + 38);
     var yy = ty + hh + 4;
     for (var d = from; d < to; d++) {
-      var st = an.P[RE.mod(ci.ph + d, ci.T)], isB = adj && d > 0 && d % an.L === 0, dt = addDays(R.start, d);
+      var st = sc.P[RE.mod(ci.ph + d, ci.T)], isB = sc.sp[d] > 0, dt = addDays(R.start, d);
       c.fillStyle = st === 'A' ? PC.amBg : st === 'P' ? PC.pmBg : '#FAFBFB'; c.fillRect(x, yy, w, rh - 2);
       if (isB) { c.fillStyle = PC.led; c.fillRect(x, yy, 6, rh - 2); }
       c.textAlign = 'center'; c.textBaseline = 'middle';
@@ -2058,9 +2396,9 @@ var RE = (function () {
       c.fillStyle = st === 'A' ? PC.amInk : st === 'P' ? PC.pmInk : PC.offInk; c.font = F(600, 16, FB);
       c.fillText(KIND[st], x + fixed[0] + fixed[1] + fixed[2] / 2, yy + rh / 2);
       c.fillStyle = isB ? PC.ink : PC.soft; c.font = F(isB ? 700 : 500, 16, FN);
-      c.fillText(d === 0 ? '-' : String(isB ? an.boundaryShift : an.s), x + fw - fixed[3] / 2, yy + rh / 2);
+      c.fillText(d === 0 ? '-' : String(sc.mv[d]), x + fw - fixed[3] / 2, yy + rh / 2);
       for (p = 1; p <= N; p++) {
-        var pos = RE.posOf(p, d, N, an.dir, an.s, an.e, an.L, adj), cxp = x + fw + (p - 1) * dw, isHl = st !== 'O' && pos === hl;
+        var pos = RE.posS(sc, p, d), cxp = x + fw + (p - 1) * dw, isHl = st !== 'O' && pos === hl;
         if (isHl) { c.fillStyle = PC.hlBg; rr(c, cxp + 3, yy + 2, dw - 6, rh - 6, 5); c.fill(); }
         c.fillStyle = isHl ? PC.hlInk : st === 'O' ? PC.offInk : PC.ink; c.font = F(isHl ? 700 : 500, 16, FN);
         c.fillText(String(pos), cxp + dw / 2, yy + rh / 2);
@@ -2072,7 +2410,7 @@ var RE = (function () {
   function makeCyclePdf(scale, onProgress) {
     var ci = cycleInfo();
     if (!ci) return Promise.reject(new Error('nofair'));
-    var txt = '한 바퀴 개선 현재 방식 구간 일 첫날 이동 되풀이 같은 순번 그대로 시작일 기사 근무 오전 오후 휴무 휴 번 횟수 조 줄 칸 숫자 진한 노란 표시 다음 어긋난 자리 세로 가로 색 고를수록 공평 모든 차이 날짜별 일차 날짜 이어서 대 계산기 차량 매일 많이 맡음 보정 필요 없음 이미 공약수 일부 1234567890~·()+';
+    var txt = '한 바퀴 개선 현재 방식 구간 일 첫날 이동 되풀이 같은 순번 그대로 시작일 기사 근무 오전 오후 휴무 휴 번 횟수 조 줄 칸 숫자 진한 노란 표시 다음 어긋난 자리 세로 가로 색 고를수록 공평 모든 차이 날짜별 일차 날짜 이어서 대 계산기 차량 매일 많이 맡음 보정 필요 없음 이미 공약수 일부 일월화수목금토 1234567890~·()+ ' + cycleTexts(ci);
     return Promise.all([ensureFonts(txt), loadLib('jspdf', function () { return !!(window.jspdf && window.jspdf.jsPDF); })]).then(function () {
       var plan = cyclePlan(ci), doc = new window.jspdf.jsPDF({ unit: 'mm', format: 'a4', orientation: 'portrait', compress: true });
       doc.setProperties({ title: '순번 한 바퀴 ' + ci.F + '일 (' + S.N + '대)' });
@@ -2142,7 +2480,7 @@ var RE = (function () {
       })();
     });
   }
-  function fileBase() { return '순번공평_' + S.N + '대_' + S.years + '년'; }
+  function fileBase() { return '순번공평_' + S.N + '대_' + R.D + '일'; }
   function busy(btn, on) { $$('[data-save]').forEach(function (b) { b.disabled = on; }); if (btn) btn.setAttribute('aria-busy', String(on)); }
   function canvasBlob(cv) { return new Promise(function (r) { cv.toBlob(function (b) { r(b); }, 'image/png'); }); }
   function doPNG(btn) {
@@ -2175,10 +2513,10 @@ var RE = (function () {
     var sum = [
       ['시내버스 순번 공평 계산 결과'], [],
       ['차량 대수', N + '대'], ['근무 형태', patWord(R.w) + ' (' + R.T + '일 주기)'], ['조 수', G + '개 조'], ['이동 방향', dirWord()],
-      ['현재 방식', '매일 ' + c.s + '칸, 보정 없음 — ' + plain(curState().note)],
+      ['현재 방식', (R.rule ? curDesc() : '매일 ' + c.s + '칸, 보정 없음') + ' — ' + (curState().brief || plain(curState().note))],
       ['개선 방식', m.fair ? '매일 ' + m.s + '칸' + (m.needAdjust ? ' + ' + m.L + '일마다 ' + moveWord(m.boundaryShift) : ' (보정 없음)') + ' (' + R.sImpWhy + ')' : '계산할 수 없음'],
       ['공평 주기 (개선)', m.fair ? m.fair.days + '일 (모든 순번 오전 ' + m.fair.perAM + '번' + (hasPM() ? '·오후 ' + m.fair.perPM + '번' : '') + ')' : '-'],
-      ['개선 방식 시작일', isoOf(R.start)], ['비교 기간', D + '일'], [],
+      ['개선 방식 시작일', isoOf(R.start)], ['비교 기간', D + '일' + (periodName(D) ? ' (' + periodName(D) + ')' : '')], [],
       ['비교 (기사별 범위)', '현재 방식', '개선 방식'],
       ['첫차(오전 ' + S.fa + '번) 맡는 횟수', rangeTxt(sc.amLo, sc.amHi), rangeTxt(sm.amLo, sm.amHi)]
     ];
@@ -2207,28 +2545,33 @@ var RE = (function () {
     }
     add('기사별 첫차·막차', dr, [8, 16, 12, 12, 12, 12, 12]);
     ['imp', 'cur'].forEach(function (key) {
-      var an = schemeAn(key), adj = schemeAdj(key);
+      var sc = schemeOf(key);
       var head = ['날짜', '요일', '일차', '이동 칸', '보정일'];
       for (var g2 = 0; g2 < G; g2++) head.push((g2 + 1) + '조 근무');
       for (var p2 = 1; p2 <= N; p2++) head.push('시작일 ' + p2 + '번');
       var rows = [head];
       for (var d = 0; d < D; d++) {
-        var dt = addDays(R.start, d), isB = adj && d > 0 && d % an.L === 0;
-        var r = [isoOf(dt), WD[dt.getDay()], d + 1, d === 0 ? '' : (isB ? an.boundaryShift : an.s), isB ? '보정' : ''];
-        for (g2 = 0; g2 < G; g2++) { var st = an.P[RE.mod(R.phases[g2] + d, an.T)]; r.push(st === 'A' ? '오전' : st === 'P' ? '오후' : '휴무'); }
-        for (p2 = 1; p2 <= N; p2++) r.push(RE.posOf(p2, d, N, an.dir, an.s, an.e, an.L, adj));
+        var dt = addDays(R.start, d), isB = sc.sp[d] > 0;
+        var r = [isoOf(dt), WD[dt.getDay()], d + 1, d === 0 ? '' : sc.mv[d], isB ? '보정' : ''];
+        for (g2 = 0; g2 < G; g2++) { var st = sc.P[RE.mod(R.phases[g2] + d, sc.T)]; r.push(st === 'A' ? '오전' : st === 'P' ? '오후' : '휴무'); }
+        for (p2 = 1; p2 <= N; p2++) r.push(RE.posS(sc, p2, d));
         rows.push(r);
       }
       add(key === 'imp' ? '순번표(개선)' : '순번표(현재)', rows, [12, 5, 6, 7, 7].concat(new Array(G).fill(8), new Array(N).fill(9)));
     });
-    var br = [['회차', '날짜', '요일', '일차', '이동 칸']];
+    var br = [['개선 방식 보정일'], ['회차', '날짜', '요일', '일차', '이동 칸']];
     R.bnd.forEach(function (d, i) { var dt = addDays(R.start, d); br.push([i + 1, isoOf(dt), WD[dt.getDay()], d + 1, m.boundaryShift]); });
     if (!R.bnd.length) br.push(['보정일 없음']);
-    add('보정일', br, [6, 12, 6, 8, 8]);
+    if (R.rule) {
+      br.push([], ['현재 방식 보정일 · ' + ruleText(R.rule)], ['회차', '날짜', '요일', '일차', '이동 칸']);
+      var scC = R.sc.cur, kk = 0;
+      for (var dd = 1; dd < D; dd++) if (scC.sp[dd]) { var dt2 = addDays(R.start, dd); br.push([++kk, isoOf(dt2), WD[dt2.getDay()], dd + 1, scC.mv[dd]]); }
+    }
+    add('보정일', br, [8, 12, 6, 8, 8]);
     var cyc = cycleInfo();
     if (cyc) {
       (R.same ? ['cur'] : ['imp', 'cur']).forEach(function (key) {
-        var an = schemeAn(key), adj = schemeAdj(key), grid = RE.cycleGrid(an, cyc.ph, cyc.p, adj, cyc.F), cnt = RE.blockCounts(an, cyc.ph, cyc.p, cyc.F, adj);
+        var sc = schemeOf(key), grid = RE.cycleGridS(sc, cyc.ph, cyc.p, cyc.F), cnt = RE.blockCountsS(sc, cyc.ph, cyc.p, cyc.F);
         var rows = [[(S.cg + 1) + '조 · 시작일 ' + cyc.p + '번 기사 · ' + cyc.F + '일 한 바퀴 · ' + schemeName(key) + ' · 한 줄 = 근무 ' + cyc.T + '일'], []];
         rows.push(['줄 시작일'].concat(cyc.stages.map(function (st) { return st.kind === 'O' ? '휴무' : KIND[st.kind] + ' ' + st.n; })));
         grid.forEach(function (row, r) { rows.push([isoOf(addDays(R.start, r * cyc.T))].concat(row.map(function (x) { return x ? x.pos : ''; }))); });
@@ -2248,12 +2591,12 @@ var RE = (function () {
   function copyText() {
     var c = R.cur, m = R.imp, sc = R.sum.cur.all, sm = R.sum.imp.all, L = [];
     L.push('[순번 공평 배정안] 차량 ' + S.N + '대 · ' + S.groups + '개 조 · ' + patShort(R.w));
-    L.push('- 현재: 매일 ' + dirWord() + ' ' + c.s + '칸, 보정 없음 → ' + plain(curState().note));
+    L.push('- 현재: 매일 ' + dirWord() + ' ' + c.s + '칸' + (R.rule ? ' + ' + ruleText(R.rule) : ', 보정 없음') + ' → ' + (curState().brief || plain(curState().note)));
     if (R.same) L.push('- 현재 방식이 이미 공평해서 바꿀 것이 없음');
     else if (m.fair) {
       L.push('- 개선: 매일 ' + m.s + '칸' + (m.needAdjust ? ' + ' + m.L + '일마다 한 번 ' + moveWord(m.boundaryShift) : ' (보정일 없음)'));
       L.push('- 효과: ' + m.fair.days + '일마다 모든 기사가 모든 순번을 오전 ' + m.fair.perAM + '번' + (hasPM() ? '·오후 ' + m.fair.perPM + '번' : '') + '씩 똑같이 맡음');
-      L.push('- ' + S.years + '년 계산: 첫차 횟수 현재 ' + rangeTxt(sc.amLo, sc.amHi) + ' → 개선 ' + rangeTxt(sm.amLo, sm.amHi) + (hasPM() ? ' / 막차 ' + rangeTxt(sc.pmLo, sc.pmHi) + ' → ' + rangeTxt(sm.pmLo, sm.pmHi) : ''));
+      L.push('- ' + R.D + '일 계산: 첫차 횟수 현재 ' + rangeTxt(sc.amLo, sc.amHi) + ' → 개선 ' + rangeTxt(sm.amLo, sm.amHi) + (hasPM() ? ' / 막차 ' + rangeTxt(sc.pmLo, sc.pmHi) + ' → ' + rangeTxt(sm.pmLo, sm.pmHi) : ''));
       var ds = R.bnd.slice(0, 3).map(function (d) { return fmtD(addDays(R.start, d)); });
       if (ds.length) L.push('- 보정일: ' + ds.join(', ') + (R.bnd.length > 3 ? ' …' : ''));
       if (m.needAdjust) L.push('- 평소와 달라지는 날은 ' + m.L + '일에 하루뿐');
@@ -2298,7 +2641,16 @@ var RE = (function () {
   $('#sc-minus').addEventListener('click', function () { S.sCur = S.sCur - 1; update(); });
   $('#sc-plus').addEventListener('click', function () { S.sCur = S.sCur + 1; update(); });
   bindSeg('#seg-dir', 'dir', Number);
-  bindSeg('#seg-years', 'years', Number);
+  /* 현재 방식 보정 */
+  $('#seg-rule').addEventListener('click', function (e) { var b = e.target.closest('button'); if (!b) return; S.rule.kind = b.dataset.v; update(); });
+  $('#in-rn').addEventListener('change', function (e) { S.rule.n = e.target.value; update(); });
+  $('#in-rwd').addEventListener('change', function (e) { S.rule.wd = +e.target.value; update(); });
+  $('#in-rmd').addEventListener('change', function (e) { S.rule.md = +e.target.value; update(); });
+  $('#rm-minus').addEventListener('click', function () { S.rule.move = ruleMove() - 1; update(); });
+  $('#rm-plus').addEventListener('click', function () { S.rule.move = ruleMove() + 1; update(); });
+  /* 비교 기간 */
+  $('#seg-days').addEventListener('click', function (e) { var b = e.target.closest('button'); if (!b) return; S.days = b.dataset.v === 'fair' ? 'fair' : +b.dataset.v; update(); });
+  $('#in-days').addEventListener('change', function (e) { var v = String(e.target.value).trim(); S.days = v === '' ? 'fair' : v; update(); });
   $('#meta-link').addEventListener('click', function () { goTab('set'); });
   $('#imp-link').addEventListener('click', function () { goTab('set', '#set-imp'); });
   $('#next-bnd').addEventListener('click', function () { goTab('cal'); });
